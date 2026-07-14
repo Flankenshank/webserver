@@ -6,10 +6,9 @@ const PORT = 8080;
 app.use(middlewareLogResponses);
 app.use("/app", middlewareMetricsInc);
 app.use("/app", express.static("./src/app"));
-app.get("/healthz", handlerReadiness);
-app.get("/metrics/", fileserverHitsHandler);
-app.get("/metrics/", fileserverHitsResetHandler);
-app.get("/reset/", fileserverHitsResetHandler);
+app.get("/api/healthz", handlerReadiness);
+app.get("/admin/metrics", fileserverHitsHandler);
+app.get("/admin/reset", fileserverHitsResetHandler);
 function handlerReadiness(req, res) {
     res.set("Content-Type", "text/plain; charset=utf-8");
     res.send("OK");
@@ -19,8 +18,13 @@ app.listen(PORT, () => {
     console.log(`Server is running at http://localhost:${PORT}`);
 });
 function fileserverHitsHandler(req, res) {
-    res.set("Content-Type", "text/plain; charset=utf-8");
-    res.send(`Hits: ${config.fileserverHits}`);
+    res.set("Content-Type", "text/html; charset=utf-8");
+    res.send(`<html>
+    <body>
+    <h1>Welcome, Chirpy Admin</h1>
+    <p>Chirpy has been visited ${config.fileserverHits} times!</p>
+  </body>
+</html>`);
 }
 ;
 function fileserverHitsResetHandler(req, res) {
