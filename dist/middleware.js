@@ -1,3 +1,4 @@
+import config from "./config.js";
 export function middlewareLogResponses(req, res, next) {
     res.on("finish", () => {
         if (res.statusCode < 200 || res.statusCode >= 300) {
@@ -7,3 +8,7 @@ export function middlewareLogResponses(req, res, next) {
     next();
 }
 ;
+export function middlewareMetricsInc(req, res, next) {
+    config.fileserverHits++;
+    next();
+}
