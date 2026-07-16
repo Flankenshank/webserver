@@ -1,6 +1,7 @@
 import express from "express";
 import { middlewareLogResponses, middlewareMetricsInc } from "./middleware.js";
 import config from "./config.js";
+import { errorHandler } from "./middleware.js";
 const app = express();
 const PORT = 8080;
 app.use(middlewareLogResponses);
@@ -10,7 +11,10 @@ app.use(express.json());
 app.get("/api/healthz", handlerReadiness);
 app.get("/admin/metrics", fileserverHitsHandler);
 app.post("/admin/reset", fileserverHitsResetHandler);
-app.post("/api/validate_chirp", chirpValidationHandler);
+app.post("/api/validate_chirp", (req, res, next) => {
+    Promise.resolve(chirpValidationHandler(req, res)).catch(next);
+});
+app.use(errorHandler);
 function handlerReadiness(req, res) {
     res.set("Content-Type", "text/plain; charset=utf-8");
     res.send("OK");
@@ -35,7 +39,7 @@ function fileserverHitsResetHandler(req, res) {
     res.send(`Hits: ${config.fileserverHits}`);
 }
 ;
-function chirpValidationHandler(req, res) {
+async function chirpValidationHandler(req, res) {
     const chirp = req.body.body;
     res.header("Content-Type", "application/json");
     if (!chirp || typeof chirp !== "string" || chirp.length === 0) {
@@ -43,8 +47,7 @@ function chirpValidationHandler(req, res) {
         return;
     }
     if (chirp.length > 140) {
-        res.status(400).send({ error: "Chirp is too long" });
-        return;
+        throw new Error("Chirp exceeds 140 characters");
     }
     const words = chirp.split(" ");
     const cleanedBody = [...words];
