@@ -1,7 +1,8 @@
 import express from "express";
 import { middlewareLogResponses, middlewareMetricsInc } from "./middleware.js";
 import config from "./config.js";
-import { errorHandler } from "./middleware.js";
+import { errorHandler } from "./errors.js";
+import { chirpValidationHandler } from "./chirps.js";
 
 const app = express();
 const PORT = 8080;
@@ -44,25 +45,3 @@ function fileserverHitsResetHandler(req: express.Request, res: express.Response)
   res.set("Content-Type", "text/plain; charset=utf-8");
   res.send(`Hits: ${config.fileserverHits}`);
 };
-
-async function chirpValidationHandler(req: express.Request, res: express.Response) {
-  const chirp = req.body.body;
-  res.header("Content-Type", "application/json");
-
-  if (!chirp || typeof chirp !== "string" || chirp.length === 0) {
-    res.status(400).send({ error: "Something went wrong" });
-    return;
-  }
-  if (chirp.length > 140) {
-    throw new Error("Chirp exceeds 140 characters");
-  }
-  const words = chirp.split(" ");
-  const cleanedBody = [...words];
-  const badWords = ["kerfuffle", "sharbert", "fornax"];
-  for (const word of words) {
-    if (badWords.includes(word.toLocaleLowerCase())) {
-      cleanedBody.splice(words.indexOf(word), 1, "****");
-    }
-  }
-  res.status(200).send({ cleanedBody: cleanedBody.join(" ") });
-}
