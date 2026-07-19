@@ -13,9 +13,22 @@ type APIConfig = {
   dbURL: string;
 };
 
-export const config: APIConfig = {
+type DBConfig = {
+  url: string;
+  migrationConfig: {
+    migrationsFolder: string;
+  };
+};
+
+export const config: APIConfig & { db: DBConfig } = {
   fileserverHits: 0,
-  dbURL: envOrThrow("DB_URL")
+  dbURL: envOrThrow("DB_URL"),
+  db: {
+    url: envOrThrow("DB_URL"),
+    migrationConfig: {
+      migrationsFolder: "./src/db/migrations",
+    },
+  },
 };
 
 export default config;

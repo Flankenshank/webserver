@@ -3,6 +3,9 @@ import { middlewareLogResponses, middlewareMetricsInc } from "./middleware.js";
 import config from "./config.js";
 import { errorHandler } from "./errors.js";
 import { chirpValidationHandler } from "./chirps.js";
+import postgres from "postgres";
+import { migrate } from "drizzle-orm/postgres-js/migrator";
+import { drizzle } from "drizzle-orm/postgres-js";
 const app = express();
 const PORT = 8080;
 app.use(middlewareLogResponses);
@@ -24,6 +27,8 @@ function handlerReadiness(req, res) {
 app.listen(PORT, () => {
     console.log(`Server is running at http://localhost:${PORT}`);
 });
+const migrationClient = postgres(config.db.url, { max: 1 });
+await migrate(drizzle(migrationClient), config.db.migrationConfig);
 function fileserverHitsHandler(req, res) {
     res.set("Content-Type", "text/html; charset=utf-8");
     res.send(`<html>
@@ -40,3 +45,6 @@ function fileserverHitsResetHandler(req, res) {
     res.send(`Hits: ${config.fileserverHits}`);
 }
 ;
+const migrationConfig = {
+    migrationsFolder: "./src/db/migrations",
+};
