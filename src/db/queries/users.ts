@@ -1,5 +1,6 @@
 import { db } from "../index.js";
 import { NewUser, users } from "../schema.js";
+import { ForbiddenError } from "../../errors.js";
 
 export async function createUser(user: NewUser) {
   const [result] = await db
@@ -7,5 +8,13 @@ export async function createUser(user: NewUser) {
     .values(user)
     .onConflictDoNothing()
     .returning();
+  return result;
+}
+
+export async function deleteAllUsers() {
+  if (process.env.PLATFORM !== "dev") {
+    throw ForbiddenError;
+  }
+  const result = await db.delete(users);
   return result;
 }
