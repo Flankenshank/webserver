@@ -1,8 +1,10 @@
 import express from "express";
-import { BadRequestError } from "./errors.js";
+import { BadRequestError } from "../../errors.js";
+import { chirps } from "../schema.js";
+import { db } from "../index.js";
 
-export async function chirpValidationHandler(req: express.Request, res: express.Response) {
-    const chirp = req.body.body;
+export async function chirpCreateHandler(req: express.Request, res: express.Response) {
+    const { body: chirp, userId } = req.body; 
     res.header("Content-Type", "application/json");
 
     if (!chirp || typeof chirp !== "string" || chirp.length === 0) {
@@ -20,5 +22,12 @@ export async function chirpValidationHandler(req: express.Request, res: express.
         cleanedBody.splice(words.indexOf(word), 1, "****");
         }
     }
-    res.status(200).send({ cleanedBody: cleanedBody.join(" ") });
+    const [result] = await db
+    .insert(chirps)
+    .values({ 
+        body: cleanedBody.join(" "),
+        userId: userId
+    })
+    .returning();
+    res.status(201).send(result);
 }

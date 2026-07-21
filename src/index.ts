@@ -2,7 +2,7 @@ import express from "express";
 import { middlewareLogResponses, middlewareMetricsInc } from "./middleware.js";
 import config from "./config.js";
 import { errorHandler, ForbiddenError } from "./errors.js";
-import { chirpValidationHandler } from "./chirps.js";
+import { chirpCreateHandler } from "./db/queries/chirps.js";
 import type { MigrationConfig } from "drizzle-orm/migrator";
 import postgres from "postgres";
 import { migrate } from "drizzle-orm/postgres-js/migrator";
@@ -22,11 +22,11 @@ app.post("/admin/reset", (req, res, next) => {
   Promise.resolve(deleteAllUsersHandler(req, res)).catch(next)
 });
 app.post("/admin/reset", fileserverHitsResetHandler);
-app.post("/api/validate_chirp", (req, res, next) => {
-  Promise.resolve(chirpValidationHandler(req, res)).catch(next)
-});
 app.post("/api/users", (req, res, next) => {
   Promise.resolve(userCreationHandler(req, res)).catch(next)
+});
+app.post("/api/chirps", (req, res, next) => {
+  Promise.resolve(chirpCreateHandler(req, res)).catch(next)
 });
 app.use(errorHandler);
 
@@ -94,6 +94,8 @@ async function deleteAllUsersHandler(req: express.Request, res: express.Response
     res.status(500).json({ error: "Failed to delete users" });
   }
 }
+
+
 
 const migrationConfig: MigrationConfig = {
   migrationsFolder: "./src/db/migrations",
