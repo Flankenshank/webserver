@@ -2,11 +2,12 @@ import express from "express";
 import { middlewareLogResponses, middlewareMetricsInc } from "./middleware.js";
 import config from "./config.js";
 import { errorHandler, ForbiddenError } from "./errors.js";
-import { chirpCreateHandler } from "./db/queries/chirps.js";
+import { chirpCreateHandler, getChirpsHandler } from "./db/queries/chirps.js";
 import postgres from "postgres";
 import { migrate } from "drizzle-orm/postgres-js/migrator";
 import { drizzle } from "drizzle-orm/postgres-js";
 import { createUser, deleteAllUsers } from "./db/queries/users.js";
+import { hashPassword, userAuthHandler } from "./auth.js";
 const app = express();
 const PORT = 8080;
 app.use(middlewareLogResponses);
@@ -15,6 +16,12 @@ app.use("/app", express.static("./src/app"));
 app.use(express.json());
 app.get("/api/healthz", handlerReadiness);
 app.get("/admin/metrics", fileserverHitsHandler);
+app.get("/api/chirps", (req, res, next) => {
+    Promise.resolve(getChirpsHandler(req, res)).catch(next);
+});
+app.get("/api/chirps/:chirpId", (req, res, next) => {
+    Promise.resolve(getChirpsHandler(req, res)).catch(next);
+});
 app.post("/admin/reset", (req, res, next) => {
     Promise.resolve(deleteAllUsersHandler(req, res)).catch(next);
 });
@@ -24,6 +31,9 @@ app.post("/api/users", (req, res, next) => {
 });
 app.post("/api/chirps", (req, res, next) => {
     Promise.resolve(chirpCreateHandler(req, res)).catch(next);
+});
+app.post("/api/login", (req, res, next) => {
+    Promise.resolve(userAuthHandler(req, res)).catch(next);
 });
 app.use(errorHandler);
 function handlerReadiness(req, res) {
@@ -53,16 +63,22 @@ function fileserverHitsResetHandler(req, res) {
 }
 ;
 async function userCreationHandler(req, res) {
-    const { email } = req.body;
+    const { email, password } = req.body;
     if (!email) {
         res.status(400).json({ error: "Email is required" });
         return;
     }
+    if (!password) {
+        res.status(400).json({ error: "Password is required" });
+        return;
+    }
     try {
-        const users = await createUser({ email });
+        const hashedPassword = await hashPassword(password);
+        const users = await createUser({ email, hashedPassword });
         res.set("Content-Type", "application/json; charset=utf-8");
         res.status(201).json({
             id: users.id,
+            password: users.hashedPassword,
             email: users.email,
             createdAt: users.createdAt,
             updatedAt: users.updatedAt

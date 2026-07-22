@@ -1,6 +1,6 @@
+import { UserInfoOptionsWithStringEncoding } from "node:os";
 import { db } from "../index.js";
-import { NewUser, users } from "../schema.js";
-import { ForbiddenError } from "../../errors.js";
+import { NewUser, User, users } from "../schema.js";
 
 export async function createUser(user: NewUser) {
   const [result] = await db
@@ -12,9 +12,8 @@ export async function createUser(user: NewUser) {
 }
 
 export async function deleteAllUsers() {
-  if (process.env.PLATFORM !== "dev") {
-    throw ForbiddenError;
-  }
   const result = await db.delete(users);
   return result;
 }
+
+export type UserResponse = Omit<User, "hashedPassword">;

@@ -1,6 +1,7 @@
 import { BadRequestError } from "../../errors.js";
 import { chirps } from "../schema.js";
 import { db } from "../index.js";
+import { asc, eq } from "drizzle-orm";
 export async function chirpCreateHandler(req, res) {
     const { body: chirp, userId } = req.body;
     res.header("Content-Type", "application/json");
@@ -28,3 +29,17 @@ export async function chirpCreateHandler(req, res) {
         .returning();
     res.status(201).send(result);
 }
+export async function getChirpsHandler(req, res) {
+    if (req.params.chirpId) {
+        const [result] = await db.select().from(chirps).where(eq(chirps.id, req.params.chirpId));
+        if (!result) {
+            res.status(404).send({ error: "Chirp not found" });
+            return;
+        }
+        res.status(200).json(result);
+        return;
+    }
+    const result = await db.select().from(chirps).orderBy(asc(chirps.createdAt));
+    res.status(200).json(result);
+}
+;

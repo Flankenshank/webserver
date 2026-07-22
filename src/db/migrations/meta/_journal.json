@@ -15,6 +15,13 @@
       "when": 1784661821449,
       "tag": "0001_damp_princess_powerful",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1784751281433,
+      "tag": "0002_grey_doctor_faustus",
+      "breakpoints": true
     }
   ]
 }
