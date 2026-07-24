@@ -4,6 +4,30 @@ import { db } from "./db/index.js";
 import { users } from "./db/schema.js";
 import { eq } from "drizzle-orm";
 import { UserResponse } from "./db/queries/users.js";
+import jwt from "jsonwebtoken";
+import type { JwtPayload } from "jsonwebtoken";
+
+type payload = Pick<JwtPayload, "iss" | "sub" | "iat" | "exp">;
+
+export function makeJWT(userID: string, expiresIn: number, secret: string): string {
+    const iat = Math.floor(Date.now() / 1000);
+    const payload: payload = {
+        iss: "chirpy",
+        sub: userID,
+        iat: iat,
+        exp: iat + expiresIn
+    };
+    return jwt.sign(payload, secret);
+}
+
+export function validateJWT(tokenString: string, secret: string): string {
+    const decoded = jwt.verify(tokenString, secret) as { sub: string };
+    if (typeof decoded === "object" && decoded !== null && typeof decoded.sub === "string") {
+        return decoded.sub;
+    } else {
+        throw new Error("Invalid token");
+    }
+}
 
 export async function hashPassword(password: string): Promise<string> {
     return argon2.hash(password);
