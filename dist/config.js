@@ -10,6 +10,7 @@ export const config = {
     fileserverHits: 0,
     dbURL: envOrThrow("DB_URL"),
     platform: envOrThrow("PLATFORM"),
+    secret: envOrThrow("JWT_SECRET"),
     db: {
         url: envOrThrow("DB_URL"),
         migrationConfig: {

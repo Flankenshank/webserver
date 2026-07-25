@@ -2,8 +2,12 @@ import { BadRequestError } from "../../errors.js";
 import { chirps } from "../schema.js";
 import { db } from "../index.js";
 import { asc, eq } from "drizzle-orm";
+import { getBearerToken, validateJWT } from "../../auth.js";
+import { config } from "../../config.js";
 export async function chirpCreateHandler(req, res) {
-    const { body: chirp, userId } = req.body;
+    const token = getBearerToken(req);
+    const validUserId = validateJWT(token, config.secret);
+    const { body: chirp } = req.body;
     res.header("Content-Type", "application/json");
     if (!chirp || typeof chirp !== "string" || chirp.length === 0) {
         res.status(400).send({ error: "Something went wrong" });
@@ -24,7 +28,7 @@ export async function chirpCreateHandler(req, res) {
         .insert(chirps)
         .values({
         body: cleanedBody.join(" "),
-        userId: userId
+        userId: validUserId
     })
         .returning();
     res.status(201).send(result);
