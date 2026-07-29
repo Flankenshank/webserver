@@ -17,5 +17,6 @@ export async function deleteAllUsers() {
 }
 
 export type UserResponse = Omit<User, "hashedPassword"> & {
-  token: string;
+  token: string,
+  refreshToken: string;
 };

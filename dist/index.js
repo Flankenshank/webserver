@@ -1,13 +1,14 @@
 import express from "express";
 import { middlewareLogResponses, middlewareMetricsInc } from "./middleware.js";
 import config from "./config.js";
-import { errorHandler, ForbiddenError } from "./errors.js";
+import { errorHandler, ForbiddenError } from "./api/errors.js";
 import { chirpCreateHandler, getChirpsHandler } from "./db/queries/chirps.js";
 import postgres from "postgres";
 import { migrate } from "drizzle-orm/postgres-js/migrator";
 import { drizzle } from "drizzle-orm/postgres-js";
 import { createUser, deleteAllUsers } from "./db/queries/users.js";
-import { hashPassword, userAuthHandler } from "./auth.js";
+import { hashPassword, refreshTokenHandler, userAuthHandler } from "./api/auth.js";
+import { revokeTokenHandler } from "./api/auth.js";
 const app = express();
 const PORT = 8080;
 app.use(middlewareLogResponses);
@@ -35,6 +36,8 @@ app.post("/api/chirps", (req, res, next) => {
 app.post("/api/login", (req, res, next) => {
     Promise.resolve(userAuthHandler(req, res)).catch(next);
 });
+app.post("/api/refresh", refreshTokenHandler);
+app.post("/api/revoke", revokeTokenHandler);
 app.use(errorHandler);
 function handlerReadiness(req, res) {
     res.set("Content-Type", "text/plain; charset=utf-8");

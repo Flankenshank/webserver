@@ -1,8 +1,8 @@
-import { BadRequestError } from "../../errors.js";
+import { BadRequestError } from "../../api/errors.js";
 import { chirps } from "../schema.js";
 import { db } from "../index.js";
 import { asc, eq } from "drizzle-orm";
-import { getBearerToken, validateJWT } from "../../auth.js";
+import { getBearerToken, validateJWT } from "../../api/auth.js";
 import { config } from "../../config.js";
 export async function chirpCreateHandler(req, res) {
     const token = getBearerToken(req);
