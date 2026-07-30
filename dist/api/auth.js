@@ -112,3 +112,23 @@ export async function revokeTokenHandler(req, res) {
         return res.status(401).send({ error: "Authentication failed" });
     }
 }
+export async function userUpdateHandler(req, res) {
+    const token = getBearerToken(req);
+    const validUserId = validateJWT(token, config.secret);
+    const newEmail = req.body.email;
+    const newPassword = await hashPassword(req.body.password);
+    const [updatedUser] = await db
+        .update(users)
+        .set({
+        hashedPassword: newPassword,
+        email: newEmail,
+    })
+        .where(eq(users.id, validUserId))
+        .returning({
+        id: users.id,
+        createdAt: users.createdAt,
+        updatedAt: users.updatedAt,
+        email: users.email,
+    });
+    return res.status(200).json(updatedUser);
+}

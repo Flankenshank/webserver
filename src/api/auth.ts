@@ -2,7 +2,7 @@ import argon2 from "argon2";
 import express from "express";
 import type { Request, Response } from "express";
 import { db } from "../db/index.js";
-import { users } from "../db/schema.js";
+import { refreshTokens, users } from "../db/schema.js";
 import { eq } from "drizzle-orm";
 import { UserResponse } from "../db/queries/users.js";
 import jwt from "jsonwebtoken";
@@ -124,3 +124,27 @@ export async function revokeTokenHandler (req: Request, res: Response) {
         return res.status(401).send({ error: "Authentication failed" })
     }
 }
+
+export async function userUpdateHandler (req: express.Request, res: express.Response) {
+    
+    const token = getBearerToken(req);
+    const validUserId = validateJWT(token, config.secret);
+    const newEmail = req.body.email;
+    const newPassword = await hashPassword(req.body.password);
+    
+    const [updatedUser] = await db
+    .update(users)
+    .set({
+            hashedPassword: newPassword,
+            email: newEmail,
+    
+    })
+        .where(eq(users.id, validUserId))
+        .returning ({
+              id: users.id,
+              createdAt: users.createdAt,
+              updatedAt: users.updatedAt,
+              email: users.email,
+        });
+        return res.status(200).json(updatedUser)
+    }

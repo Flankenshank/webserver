@@ -7,7 +7,7 @@ import postgres from "postgres";
 import { migrate } from "drizzle-orm/postgres-js/migrator";
 import { drizzle } from "drizzle-orm/postgres-js";
 import { createUser, deleteAllUsers } from "./db/queries/users.js";
-import { hashPassword, refreshTokenHandler, userAuthHandler } from "./api/auth.js";
+import { hashPassword, refreshTokenHandler, userAuthHandler, userUpdateHandler } from "./api/auth.js";
 import { revokeTokenHandler } from "./api/auth.js";
 const app = express();
 const PORT = 8080;
@@ -38,6 +38,7 @@ app.post("/api/login", (req, res, next) => {
 });
 app.post("/api/refresh", refreshTokenHandler);
 app.post("/api/revoke", revokeTokenHandler);
+app.put("/api/users", userUpdateHandler);
 app.use(errorHandler);
 function handlerReadiness(req, res) {
     res.set("Content-Type", "text/plain; charset=utf-8");
