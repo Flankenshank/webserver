@@ -60,6 +60,7 @@ export async function userAuthHandler(req, res) {
             updatedAt: result.updatedAt,
             token,
             refreshToken,
+            isChirpyRed: result.isChirpyRed,
         };
         await insertRefreshToken(refreshToken, result.id);
         res.status(200).json(response);

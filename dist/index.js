@@ -6,7 +6,7 @@ import { getChirpsHandler } from "./db/queries/chirps.js";
 import postgres from "postgres";
 import { migrate } from "drizzle-orm/postgres-js/migrator";
 import { drizzle } from "drizzle-orm/postgres-js";
-import { createUser, deleteAllUsers } from "./db/queries/users.js";
+import { createUser, deleteAllUsers, upgradeUser } from "./db/queries/users.js";
 import { hashPassword, refreshTokenHandler, userAuthHandler, userUpdateHandler } from "./api/auth.js";
 import { revokeTokenHandler } from "./api/auth.js";
 import { chirpCreateHandler, chirpDeleteHandler } from "./api/chirps.js";
@@ -39,6 +39,7 @@ app.post("/api/login", (req, res, next) => {
 });
 app.post("/api/refresh", refreshTokenHandler);
 app.post("/api/revoke", revokeTokenHandler);
+app.post("/api/polka/webhooks", polkaWebhookHandler);
 app.put("/api/users", userUpdateHandler);
 app.delete("/api/chirps/:chirpId", (req, res, next) => {
     Promise.resolve(chirpDeleteHandler(req, res)).catch(next);
@@ -86,10 +87,10 @@ async function userCreationHandler(req, res) {
         res.set("Content-Type", "application/json; charset=utf-8");
         res.status(201).json({
             id: users.id,
-            password: users.hashedPassword,
             email: users.email,
             createdAt: users.createdAt,
-            updatedAt: users.updatedAt
+            updatedAt: users.updatedAt,
+            isChirpyRed: users.isChirpyRed,
         });
     }
     catch (error) {
@@ -108,6 +109,30 @@ async function deleteAllUsersHandler(req, res) {
     catch (error) {
         console.error(error);
         res.status(500).json({ error: "Failed to delete users" });
+    }
+}
+async function polkaWebhookHandler(req, res) {
+    const { event } = req.body;
+    if (event !== "user.upgraded") {
+        res.status(204).send();
+        return;
+    }
+    const { userId } = req.body.data;
+    if (!userId) {
+        res.status(400).json({ error: "User ID is required" });
+        return;
+    }
+    try {
+        const updatedUser = await upgradeUser(userId);
+        if (!updatedUser) {
+            res.status(404).json({ error: "User not found" });
+            return;
+        }
+        res.status(204).send();
+    }
+    catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Failed to upgrade user" });
     }
 }
 const migrationConfig = {

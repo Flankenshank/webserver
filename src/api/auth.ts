@@ -61,20 +61,21 @@ export async function userAuthHandler (req: express.Request, res: express.Respon
 
     const token = makeJWT(result.id, config.secret);
     const refreshToken = makeRefreshToken();
-        
-        const response: UserResponse = {
-            id: result.id,
-            email: result.email,
-            createdAt: result.createdAt,
-            updatedAt: result.updatedAt,
-            token,
-            refreshToken,
-        };
-        await insertRefreshToken(refreshToken, result.id);
-        res.status(200).json(response);
-        return;
-    }
-    res.status(400).send({ error: "Email is required" });
+    
+    const response: UserResponse = {
+        id: result.id,
+        email: result.email,
+        createdAt: result.createdAt,
+        updatedAt: result.updatedAt,
+        token,
+        refreshToken,
+        isChirpyRed: result.isChirpyRed,
+    };
+    await insertRefreshToken(refreshToken, result.id);
+    res.status(200).json(response);
+    return;
+}
+res.status(400).send({ error: "Email is required" });
 };
 
 export function getBearerToken(req: Request): string {
