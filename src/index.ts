@@ -8,7 +8,7 @@ import postgres from "postgres";
 import { migrate } from "drizzle-orm/postgres-js/migrator";
 import { drizzle } from "drizzle-orm/postgres-js";
 import { createUser, deleteAllUsers, upgradeUser } from "./db/queries/users.js";
-import { hashPassword, refreshTokenHandler, userAuthHandler, userUpdateHandler } from "./api/auth.js";
+import { getAPIKey, hashPassword, refreshTokenHandler, userAuthHandler, userUpdateHandler } from "./api/auth.js";
 import { revokeTokenHandler } from "./api/auth.js";
 import { chirpCreateHandler, chirpDeleteHandler } from "./api/chirps.js";
 
@@ -126,6 +126,11 @@ async function deleteAllUsersHandler(req: express.Request, res: express.Response
 }
 
 async function polkaWebhookHandler(req: express.Request, res: express.Response) {
+  const apikey = await getAPIKey(req);
+  if (apikey !== config.polkaKey) {
+    res.status(401).json({ error: "Invalid API key" });
+    return;
+  }
   const { event } = req.body;
   if (event !== "user.upgraded") {
     res.status(204).send();

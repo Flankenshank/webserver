@@ -133,3 +133,16 @@ export async function userUpdateHandler(req, res) {
     });
     return res.status(200).json(updatedUser);
 }
+;
+export async function getAPIKey(req) {
+    const authHeader = req.get("Authorization");
+    if (!authHeader) {
+        throw new UnauthorizedError("header missing");
+    }
+    const parts = authHeader.trim().split(/\s+/);
+    if (parts.length !== 2 || parts[0].toLowerCase() !== "apikey" || !parts[1]) {
+        throw new UnauthorizedError("invalid header format");
+    }
+    return parts[1];
+}
+;
