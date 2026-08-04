@@ -2,54 +2,34 @@ import express from "express";
 import { BadRequestError } from "../../api/errors.js";
 import { chirps } from "../schema.js";
 import { db } from "../index.js";
-import { asc, eq } from "drizzle-orm";
-import { getBearerToken, validateJWT } from "../../api/auth.js";
-import { config } from "../../config.js";
+import { asc, desc, eq } from "drizzle-orm";
 
-export async function chirpCreateHandler(req: express.Request, res: express.Response) {
+export async function getChirpsHandler (req: express.Request, res: express.Response, authorId?: string, sort?: "asc" | "desc") {
+    try {
+        
+        const authorId = (req.query.authorId as string);
+        const sort = (req.query.sort as "asc" | "desc") || "asc";
 
-    const token = getBearerToken(req);
-    const validUserId = validateJWT(token, config.secret);
-
-
-    const { body: chirp } = req.body; 
-    res.header("Content-Type", "application/json");
-
-    if (!chirp || typeof chirp !== "string" || chirp.length === 0) {
-        res.status(400).send({ error: "Something went wrong" });
-        return;
-    }
-    if (chirp.length > 140) {
-        throw new BadRequestError("Chirp is too long. Max length is 140");
-    }
-    const words = chirp.split(" ");
-    const cleanedBody = [...words];
-    const badWords = ["kerfuffle", "sharbert", "fornax"];
-    for (const word of words) {
-        if (badWords.includes(word.toLocaleLowerCase())) {
-        cleanedBody.splice(words.indexOf(word), 1, "****");
+        if (req.params.chirpId) {
+            const [chirp] = await db.select().from(chirps).where(eq(chirps.id, req.params.chirpId as string));
+            if (!chirp) {
+                res.status(404).send({ error: "Chirp not found" });
+            }
+            
+            return res.status(200).json(chirp);
         }
-    }
-    const [result] = await db
-    .insert(chirps)
-    .values({ 
-        body: cleanedBody.join(" "),
-        userId: validUserId
-    })
-    .returning();
-    res.status(201).send(result);
-}
-
-export async function getChirpsHandler (req: express.Request, res: express.Response) {
-    if (req.params.chirpId) {
-        const [result] = await db.select().from(chirps).where(eq(chirps.id, req.params.chirpId as string));
-        if (!result) {
-            res.status(404).send({ error: "Chirp not found" });
-            return;
+        
+        let results;
+        
+        if (authorId) {
+            results = await db.select().from(chirps).where(eq(chirps.userId, authorId)).orderBy(sort === "asc" ? asc(chirps.createdAt) : desc(chirps.createdAt));
+        } else {
+            results = await db.select().from(chirps).orderBy(sort === "asc" ? asc(chirps.createdAt) : desc(chirps.createdAt));
         }
-        res.status(200).json(result);
-        return;
+        
+        return res.status(200).json(results);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Internal server error" });
     }
-    const result = await db.select().from(chirps).orderBy(asc(chirps.createdAt));
-    res.status(200).json(result);
 };
